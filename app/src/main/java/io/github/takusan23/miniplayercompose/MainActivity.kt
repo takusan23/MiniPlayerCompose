@@ -63,13 +63,21 @@ class MainActivity : ComponentActivity() {
                             // 操作中はtrue
                             val isDraggable = remember { mutableStateOf(false) }
                             // アニメーションしながら戻る。isMiniPlayerの値が変わると動く
-                            val playerWidthEx = animateFloatAsState(targetValue = if (isMiniPlayer.value) 0.5f else 1f, finishedListener = { playerWidthProgress.value = it })
-                            val offSetYEx = animateFloatAsState(targetValue = if (isMiniPlayer.value) (boxHeight - miniPlayerHeight).toFloat() else 1f, finishedListener = { offsetY.value = it })
+                            val playerWidthEx = animateFloatAsState(targetValue = when {
+                                isDraggable.value -> playerWidthProgress.value
+                                isMiniPlayer.value -> 0.5f
+                                else -> 1f
+                            }, finishedListener = { playerWidthProgress.value = it })
+                            val offSetYEx = animateFloatAsState(targetValue = when {
+                                isDraggable.value -> offsetY.value
+                                isMiniPlayer.value -> (boxHeight - miniPlayerHeight).toFloat()
+                                else -> 1f
+                            }, finishedListener = { offsetY.value = it })
 
                             Box(
                                 modifier = Modifier
-                                    .offset { IntOffset(offsetX.value.roundToInt(), if (isDraggable.value) offsetY.value.roundToInt() else offSetYEx.value.roundToInt()) }
-                                    .fillMaxWidth(if (isDraggable.value) playerWidthProgress.value else playerWidthEx.value) // 引数で大きさを決められる
+                                    .offset { IntOffset(offsetX.value.roundToInt(), offSetYEx.value.roundToInt()) }
+                                    .fillMaxWidth(playerWidthEx.value) // 引数で大きさを決められる
                                     .align(alignment = Alignment.TopEnd) // 右下に行くように
                                     .aspectRatio(1.7f) // 16:9を維持
                                     .background(Color(0xFF252525))
@@ -81,7 +89,6 @@ class MainActivity : ComponentActivity() {
                                             if (offsetY.value.toInt() in 0..(boxHeight - miniPlayerHeight)) {
                                                 offsetY.value += delta.toInt()
                                                 playerWidthProgress.value = 1f - (progress / 2)
-                                                println(progress)
                                             } else {
                                                 // 画面外突入
                                                 offsetY.value = when {
